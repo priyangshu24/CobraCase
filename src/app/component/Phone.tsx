@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { cn } from "@/lib/utils"
 import { HTMLAttributes } from "react"
 
@@ -8,18 +9,30 @@ interface PhoneProps extends HTMLAttributes<HTMLDivElement> {
 
 const Phone = ({ imgSrc, className, dark = false, ...props }: PhoneProps) => {
   return (
-    <div className={cn("relative pointer-events-none z-50 overflow-hidden", 
-    className)}
-    {...props}>
+    <div 
+      className={cn(
+        "relative pointer-events-none z-50 overflow-hidden", 
+        className
+      )}
+      {...props}>
+      <img 
+      src= { 
+        dark 
+            ? "/phone-template-dark-edges.png" 
+            : "/phone-template-white-edges.png"
+      } 
+      className="pointer-events-none z-50 select-none"
+      alt="phone template" 
+      />
+
+      <div className="absolute -z-10 inset-0">
         <img 
-        src= {
-             dark ? '/phone-template-dark-edges.png'
-             : '/phone-template-light-edges.png'
-             }
-             className="pointer-events-none z-50 select-none"
-             alt="Phone image"
-             />
-             
+          className= "object-cover"
+          src={imgSrc}
+          alt= "Ovrlay image"
+          
+        />
+      </div>
     </div>
   )
 }
