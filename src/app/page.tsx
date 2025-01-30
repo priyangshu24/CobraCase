@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import { Star } from "lucide-react";
 import { Icons } from "@/components/icons";
-
+import { Reviews } from "./component/Reviews";
 export default function Home() {
   return (
     <div className="bg-slate-50">
@@ -60,11 +60,11 @@ export default function Home() {
                     alt="Emma L."
                   />
                   <img className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src="/users/user-4.png"
+                    src="/users/user-4.jpg"
                     alt="David K."
                   />
                   <img className="inline-block object-fill h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src="/users/user-5.png"
+                    src="/users/user-5.jpg"
                     alt="Jessica W."
                   />
                 </div>
@@ -258,6 +258,10 @@ export default function Home() {
 
           </div>
         </MaxWidthWrapper>
+
+        <div className="pt-16">
+          <Reviews/>
+        </div>   
       </section>
     </div>
   );
