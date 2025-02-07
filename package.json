@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@kinde-oss/kinde-auth-nextjs": "^2.4.6",
-    "@radix-ui/react-progress": "^1.1.1",
+    "@radix-ui/react-progress": "^1.1.2",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-toast": "^1.2.6",
     "@types/react-dropzone": "^4.2.2",
+    "@uploadthing/react": "^7.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.0.6",
@@ -23,7 +25,9 @@
     "react-dropzone": "^14.3.5",
     "shadcn-ui": "^0.9.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uploadthing": "^7.4.4",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
