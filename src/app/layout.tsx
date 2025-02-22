@@ -4,7 +4,7 @@ import Navbar from "./component/Navbar";
 import "./globals.css";
 import Footer from "./component/Footer";
 import { Toaster } from "@/components/ui/toaster"
-
+import  Providers  from "../components/ui/Providers";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,8 +29,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Navbar />
-        <main className="flex flex-col min-h-[calc(100vh-3.5rem-1px)]">
-          <div className="flex-1 flex flex-col h-full">{children}</div>
+        <main className="flex grainy-light flex-col min-h-[calc(100vh-3.5rem-1px)]">
+          <div className="flex-1 flex flex-col h-full">
+            <Providers>{children}</Providers>
+          </div>
           <Footer />
         </main>
         <Toaster/>

@@ -20,6 +20,7 @@ enum PhoneModel {
   iphone13
   iphone14
   iphone15
+  iphone16
 }
 
 enum CaseMaterial {
