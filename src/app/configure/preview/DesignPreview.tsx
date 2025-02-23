@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import Phone from '@/components/Phone'
+import Phone from '@/app/component/Phone';
 import { Button } from '@/components/ui/button'
 import { BASE_PRICE, PRODUCT_PRICES } from '@/config/products'
 import { cn, formatPrice } from '@/lib/utils'
-import { COLORS, FINISHES, MODELS } from '@/validators/option-validator'
+import { COLORS,MODELS } from '@/validators/option-validator'
 import { Configuration } from '@prisma/client'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowRight, Check } from 'lucide-react'
@@ -15,7 +15,7 @@ import { createCheckoutSession } from './actions'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs'
-import LoginModal from '@/components/LoginModal'
+import LoginModal from '@/components/ui/LoginModal'
 
 const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const router = useRouter()
@@ -43,7 +43,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const { mutate: createPaymentSession } = useMutation({
     mutationKey: ['get-checkout-session'],
     mutationFn: createCheckoutSession,
-    onSuccess: ({ url }) => {
+    onSuccess: ({url}) => {
       if (url) router.push(url)
       else throw new Error('Unable to retrieve payment URL.')
     },
