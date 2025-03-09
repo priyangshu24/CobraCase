@@ -1,6 +1,4 @@
-// app/actions.ts
 "use server";
-
 
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { Pool } from '@neondatabase/serverless';

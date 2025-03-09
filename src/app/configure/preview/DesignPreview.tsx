@@ -1,21 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import Phone from '@/app/component/Phone';
+import Phone from '@/app/component/Phone'
 import { Button } from '@/components/ui/button'
 import { BASE_PRICE, PRODUCT_PRICES } from '@/config/products'
 import { cn, formatPrice } from '@/lib/utils'
-import { COLORS,MODELS } from '@/validators/option-validator'
+import { COLORS, MODELS } from '@/validators/option-validator'
 import { Configuration } from '@prisma/client'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowRight, Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Confetti from 'react-dom-confetti'
-import { createCheckoutSession } from './actions'
+import { createCheckoutSession } from '@/app/configure/preview/actions'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs'
 import LoginModal from '@/components/ui/LoginModal'
+
 
 const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const router = useRouter()
@@ -40,12 +41,61 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
     totalPrice += PRODUCT_PRICES.material.polycarbonate
   if (finish === 'textured') totalPrice += PRODUCT_PRICES.finish.textured
 
+  useEffect(() => {
+    // Dynamically load Razorpay script
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
+
   const { mutate: createPaymentSession } = useMutation({
     mutationKey: ['get-checkout-session'],
     mutationFn: createCheckoutSession,
-    onSuccess: ({url}) => {
-      if (url) router.push(url)
-      else throw new Error('Unable to retrieve payment URL.')
+    onSuccess: ({ id }) => {
+      if (id) {
+        // Ensure Razorpay is available on the window object
+        if (typeof window !== 'undefined' && (window as any).Razorpay) {
+          const options: any = {
+            key: process.env.RAZORPAY_KEY_ID!,
+            amount: totalPrice,
+            currency: 'INR',
+            name: 'Your Company Name',
+            description: 'Test Transaction',
+            order_id: id,
+            handler: (response: RazorpayPaymentResponse) => {
+              alert(response.razorpay_payment_id)
+              alert(response.razorpay_order_id)
+              alert(response.razorpay_signature)
+            },
+            prefill: {
+              name: user.name,
+              email: user.email,
+              contact: '9999999999'
+            },
+            notes: {
+              address: 'Razorpay Corporate Office'
+            },
+            theme: {
+              color: '#F37254'
+            }
+          }
+          const rzp1 = new (window as any).Razorpay(options)
+          rzp1.open()
+        } else {
+          toast({
+            title: 'Razorpay not loaded',
+            description: 'Please try again later.',
+            variant: 'destructive',
+          })
+        }
+      } else {
+        throw new Error('Unable to retrieve payment ID.')
+      }
     },
     onError: () => {
       toast({
@@ -159,7 +209,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
 
             <div className='mt-8 flex justify-end pb-12'>
               <Button
-                onClick={() => handleCheckout()}
+                onClick={handleCheckout}
                 className='px-4 sm:px-6 lg:px-8'>
                 Check out <ArrowRight className='h-4 w-4 ml-1.5 inline' />
               </Button>

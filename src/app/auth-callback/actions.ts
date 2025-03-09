@@ -11,17 +11,22 @@ export const getAuthStatus = async () => {
     throw new Error('Invalid user data')
   }
 
+  console.log('Retrieved user:', user)
+
   const existingUser = await db.user.findFirst({
     where: { id: user.id },
   })
 
   if (!existingUser) {
-    await db.user.create({
+    const newUser = await db.user.create({
       data: {
         id: user.id,
         email: user.email,
       },
     })
+    console.log('Created new user:', newUser)
+  } else {
+    console.log('User already exists:', existingUser)
   }
 
   return { success: true }
