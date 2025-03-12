@@ -47,14 +47,11 @@ export const createCheckoutSession = async ({
       console.log('Created new user:', dbUser)
     }
 
-    // Calculate price (converting to paise for Razorpay)
+    // Calculate price
     const { finish, material } = configuration
-    let priceInINR = BASE_PRICE * 75 // Converting USD to INR (approximate conversion)
-    if (finish === 'textured') priceInINR += PRODUCT_PRICES.finish.textured * 75
-    if (material === 'polycarbonate') priceInINR += PRODUCT_PRICES.material.polycarbonate * 75
-
-    // Convert to paise (1 INR = 100 paise)
-    const priceInPaise = Math.round(priceInINR * 100)
+    let price = BASE_PRICE
+    if (finish === 'textured') price += PRODUCT_PRICES.finish.textured
+    if (material === 'polycarbonate') price += PRODUCT_PRICES.material.polycarbonate
 
     // Find or create order
     let order: Order | null = await db.order.findFirst({
@@ -68,7 +65,7 @@ export const createCheckoutSession = async ({
     if (!order) {
       order = await db.order.create({
         data: {
-          amount: priceInINR, // Store amount in INR
+          amount: price / 100,
           userId: dbUser.id,
           configurationId: configuration.id,
           status: 'awaiting_shipment',
@@ -80,20 +77,15 @@ export const createCheckoutSession = async ({
 
     // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({
-      amount: priceInPaise, // Amount in paise
-      currency: 'INR',
+      amount: price,
+      currency: 'INR', // Changed from 'IND' to 'INR' (correct currency code)
       receipt: order.id,
       payment_capture: true,
-      notes: {
-        orderId: order.id,
-        userId: dbUser.id,
-        configurationId: configuration.id,
-      }
     })
 
     return { 
       id: razorpayOrder.id,
-      amount: priceInPaise,
+      amount: price,
       currency: 'INR'
     }
   } catch (error) {

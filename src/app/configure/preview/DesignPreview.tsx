@@ -60,20 +60,22 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
     onSuccess: ({ id }) => {
       if (id) {
         // Ensure Razorpay is available on the window object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof window !== 'undefined' && (window as any).Razorpay) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const options: any = {
             key: process.env.RAZORPAY_KEY_ID!,
             amount: totalPrice,
             currency: 'INR',
-            name: 'Your Company Name',
+            name: 'CaseCobra',
             description: 'Test Transaction',
             order_id: id,
 
-            handler: (response: RazorpayPaymentResponse) => {
-              alert(response.razorpay_payment_id)
-              alert(response.razorpay_order_id)
-              alert(response.razorpay_signature)
-            },
+            // handler: (response: RazorpayPaymentResponse) => {
+            //   alert(response.razorpay_payment_id)
+            //   alert(response.razorpay_order_id)
+            //   alert(response.razorpay_signature)
+            // },
             prefill: {
               name: user.name,
               email: user.email,
@@ -86,6 +88,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
               color: '#F37254'
             }
           }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const rzp1 = new (window as any).Razorpay(options)
           rzp1.open()
         } else {
