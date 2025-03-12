@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
         // Handle payment success
         if (event.event === 'payment.captured') {
-            const { order_id } = event.payload.payment.entity
+            const { order_id} = event.payload.payment.entity
 
             // Update order status in database
             await db.order.update({
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
                 data: {
                     isPaid: true,
                     status: 'awaiting_shipment',
+                    
                 }
             })
 
@@ -45,8 +46,11 @@ export async function POST(req: Request) {
         }
 
         return new Response('Unhandled event type', { status: 200 })
-    } catch (err) {
-        console.error('Webhook error:', err)
-        return new Response('Webhook error', { status: 500 })
+    } catch (error) { // Changed from err to error and using it in the response
+        console.error('Webhook error:', error)
+        return new Response(
+            `Webhook error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+            { status: 500 }
+        )
     }
 }
