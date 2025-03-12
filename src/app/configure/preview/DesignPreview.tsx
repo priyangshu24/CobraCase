@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
@@ -67,6 +68,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
             name: 'Your Company Name',
             description: 'Test Transaction',
             order_id: id,
+
             handler: (response: RazorpayPaymentResponse) => {
               alert(response.razorpay_payment_id)
               alert(response.razorpay_order_id)

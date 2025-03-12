@@ -78,6 +78,7 @@ model Order {
 
   createdAt DateTime @default(now())
   updated   DateTime @updatedAt
+  
 }
 
 model ShippingAddress {
