@@ -2,9 +2,15 @@ import { db } from "@/db"
 import { notFound } from "next/navigation"
 import DesignConfigurator from "./DesignConfigurator"
 
-export default async function Page({ searchParams }: never) {
-  const resolvedParams = await searchParams
-  const { id } = resolvedParams
+// Remove your custom PageProps interface completely
+// Instead, use the default Next.js App Router typing pattern
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const { id } = searchParams
   
   if (!id || typeof id !== 'string') {
     return notFound()
