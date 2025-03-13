@@ -1,6 +1,6 @@
 'use client'
 
-import  HandleComponent  from '@/components/ui/HandleComponent'
+import HandleComponent from '@/components/ui/HandleComponent'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, formatPrice } from '@/lib/utils'
@@ -131,7 +131,8 @@ const DesignConfigurator = ({
       const file = new File([blob], 'filename.png', { type: 'image/png' })
 
       await startUpload([file], { configId })
-    } catch (err) {
+    } catch (error) {
+      console.error('Error saving configuration:', error)
       toast({
         title: 'Something went wrong',
         description:
