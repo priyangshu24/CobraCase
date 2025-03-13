@@ -2,17 +2,9 @@ import { db } from "@/db"
 import { notFound } from "next/navigation"
 import DesignConfigurator from "./DesignConfigurator"
 
-interface SearchParams {
-  [key: string]: string | string[] | undefined
-}
-
-// For App Router pages, use the correct type import
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: SearchParams
-}) {
-  const { id } = searchParams
+export default async function Page({ searchParams }: never) {
+  const resolvedParams = await searchParams
+  const { id } = resolvedParams
   
   if (!id || typeof id !== 'string') {
     return notFound()
