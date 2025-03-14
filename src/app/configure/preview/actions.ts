@@ -17,26 +17,26 @@ export const createCheckoutSession = async ({
     const configuration = await db.configuration.findUnique({
       where: { id: configId },
     })
-
+    
     if (!configuration) {
       throw new Error('No such configuration found')
     }
-
+    
     // Get user from session
     const { getUser } = getKindeServerSession()
     const user = await getUser()
-
+    
     console.log('Retrieved user:', user)
-
+    
     if (!user || !user.id || !user.email) {
       throw new Error('You need to be logged in')
     }
-
+    
     // Find or create user in database
     let dbUser = await db.user.findUnique({
       where: { id: user.id },
     })
-
+    
     if (!dbUser) {
       dbUser = await db.user.create({
         data: {
@@ -46,13 +46,13 @@ export const createCheckoutSession = async ({
       })
       console.log('Created new user:', dbUser)
     }
-
+    
     // Calculate price
     const { finish, material } = configuration
     let price = BASE_PRICE
     if (finish === 'textured') price += PRODUCT_PRICES.finish.textured
     if (material === 'polycarbonate') price += PRODUCT_PRICES.material.polycarbonate
-
+    
     // Find or create order
     let order: Order | null = await db.order.findFirst({
       where: {
@@ -61,7 +61,7 @@ export const createCheckoutSession = async ({
         isPaid: false,
       },
     })
-
+    
     if (!order) {
       order = await db.order.create({
         data: {
@@ -74,19 +74,29 @@ export const createCheckoutSession = async ({
       })
       console.log('Created new order:', order)
     }
-
-    // Create Razorpay order
+    
+    // Create Razorpay order with additional parameters
     const razorpayOrder = await razorpay.orders.create({
       amount: price,
-      currency: 'INR', // Changed from 'IND' to 'INR' (correct currency code)
+      currency: 'INR',
       receipt: order.id,
       payment_capture: true,
+      notes: {
+        userId: user.id,
+        orderId: order.id,
+        configurationId: configuration.id,
+      }
     })
-
-    return { 
+    
+    // Return order details along with the success and cancel URLs
+    return {
       id: razorpayOrder.id,
       amount: price,
-      currency: 'INR'
+      currency: 'INR',
+      orderId: order.id,
+      configurationId: configuration.id,
+      success_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/thank-you?orderId=${order.id}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/configure/preview?id=${configuration.id}`,
     }
   } catch (error) {
     console.error('Checkout session error:', error)
