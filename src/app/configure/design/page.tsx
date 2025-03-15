@@ -1,30 +1,30 @@
-import { db } from "@/db"
-import { notFound } from "next/navigation"
-import DesignConfigurator from "./DesignConfigurator"
+import { db } from '@/db'
+import { notFound } from 'next/navigation'
+import DesignConfigurator from './DesignConfigurator'
 
-// Use the correct typing for App Router pages
 interface PageProps {
-  params: { [key: string]: string | string[] }
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: {
+    [key: string]: string | string[] | undefined
+  }
 }
 
-export default async function Page({ searchParams }: PageProps) {
+const Page = async ({ searchParams }: PageProps) => {
   const { id } = searchParams
-  
+
   if (!id || typeof id !== 'string') {
     return notFound()
   }
-  
+
   const configuration = await db.configuration.findUnique({
     where: { id },
   })
-  
+
   if (!configuration) {
     return notFound()
   }
-  
-  const { imageUrl, height, width } = configuration
-  
+
+  const { imageUrl, width, height } = configuration
+
   return (
     <DesignConfigurator
       configId={configuration.id}
@@ -33,3 +33,5 @@ export default async function Page({ searchParams }: PageProps) {
     />
   )
 }
+
+export default Page
