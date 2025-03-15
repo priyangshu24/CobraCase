@@ -91,10 +91,16 @@ export const createCheckoutSession = async ({
     // Return order details along with the success and cancel URLs
     return {
       id: razorpayOrder.id,
-      amount: price,
+      amount: price * 100,
       currency: 'INR',
       orderId: order.id,
-      configurationId: configuration.id,
+      configId: configuration.id,  // Added this field
+      key: process.env.RAZORPAY_KEY_ID!,
+      notes: {
+        userId: user.id,
+        orderId: order.id,
+        configurationId: configuration.id,
+      },
       success_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/thank-you?orderId=${order.id}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/configure/preview?id=${configuration.id}`,
     }
