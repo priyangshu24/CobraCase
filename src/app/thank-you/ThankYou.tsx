@@ -1,26 +1,74 @@
-// Thank You Page Component
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { getPaymentStatus } from './action'
-import { useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import PhonePreview from '@/components/ui/PhonePreview'
 import { formatPrice } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+
+interface OrderData {
+  isPaid: boolean
+  configuration: {
+    croppedImageUrl: string
+    color: string
+  }
+  billingAddress?: {
+    name: string
+    street: string
+    city: string
+    postalCode: string
+  }
+  shippingAddress?: {
+    name: string
+    street: string
+    city: string
+    postalCode: string
+  }
+  amount: number
+}
+
+const AddressSection = ({ 
+  address, 
+  type 
+}: { 
+  address: OrderData['billingAddress'], 
+  type: 'Shipping' | 'Billing' 
+}) => (
+  <div>
+    <p className='font-medium text-gray-900'>{type} address</p>
+    <div className='mt-2 text-zinc-700'>
+      {address ? (
+        <address className='not-italic'>
+          <span className='block'>{address.name}</span>
+          <span className='block'>{address.street}</span>
+          <span className='block'>
+            {address.postalCode} {address.city}
+          </span>
+        </address>
+      ) : (
+        <p>No {type.toLowerCase()} address provided</p>
+      )}
+    </div>
+  </div>
+)
 
 const ThankYou = () => {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const orderId = searchParams.get('orderId') || ''
 
-  const { data } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<OrderData | true>({
     queryKey: ['get-payment-status', orderId],
     queryFn: async () => await getPaymentStatus({ orderId }),
-    retry: true,
-    retryDelay: 500,
+    retry: 3,
+    retryDelay: 1500,
     enabled: !!orderId,
+    refetchInterval: (data) => (!data || !data.isPaid) ? 3000 : true,
   })
 
-  if (data === undefined) {
+  if (isLoading) {
     return (
       <div className='w-full mt-24 flex justify-center'>
         <div className='flex flex-col items-center gap-2'>
@@ -32,31 +80,55 @@ const ThankYou = () => {
     )
   }
 
-  if (data === false) {
+  if (error || !data) {
     return (
       <div className='w-full mt-24 flex justify-center'>
-        <div className='flex flex-col items-center gap-2'>
-          <Loader2 className='h-8 w-8 animate-spin text-zinc-500' />
-          <h3 className='font-semibold text-xl'>Verifying your payment...</h3>
-          <p>This might take a moment.</p>
+        <div className='flex flex-col items-center gap-4'>
+          <AlertCircle className='h-12 w-12 text-red-500' />
+          <h3 className='font-semibold text-xl text-red-500'>
+            Failed to load order details
+          </h3>
+          <p className='text-zinc-600'>Please try again or contact support.</p>
+          <Button 
+            onClick={() => refetch()}
+            variant="outline"
+            className='mt-2'
+          >
+            Retry
+          </Button>
         </div>
       </div>
     )
   }
 
-  const { configuration, billingAddress, shippingAddress, amount } = data
-  const { color } = configuration
+  const { configuration, billingAddress, shippingAddress, amount, isPaid } = data
+  const { color, croppedImageUrl } = configuration
 
   return (
     <div className='bg-white'>
       <div className='mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8'>
         <div className='max-w-xl'>
-          <p className='text-base font-medium text-primary'>Thank you!</p>
+          <div className='flex items-center gap-2'>
+            {isPaid ? (
+              <CheckCircle className='h-6 w-6 text-green-500' />
+            ) : (
+              <AlertCircle className='h-6 w-6 text-yellow-500' />
+            )}
+            <p className={`text-base font-medium ${
+              isPaid ? 'text-green-500' : 'text-yellow-500'
+            }`}>
+              {isPaid ? 'Payment Successful!' : 'Processing Payment...'}
+            </p>
+          </div>
+          
           <h1 className='mt-2 text-4xl font-bold tracking-tight sm:text-5xl'>
-            Your case is on the way!
+            {isPaid ? 'Your case is on the way!' : 'Processing your order...'}
           </h1>
+          
           <p className='mt-2 text-base text-zinc-500'>
-            We&apos;ve received your order and are now processing it.
+            {isPaid 
+              ? "We've received your payment and are processing your order."
+              : "We're verifying your payment. This might take a moment."}
           </p>
 
           <div className='mt-12 text-sm font-medium'>
@@ -65,67 +137,32 @@ const ThankYou = () => {
           </div>
         </div>
 
-        <div className='mt-10 border-t border-zinc-200'>
-          <div className='mt-10 flex flex-auto flex-col'>
-            <h4 className='font-semibold text-zinc-900'>
-              You made a great choice!
-            </h4>
-            <p className='mt-2 text-sm text-zinc-600'>
-              We at CaseCobra believe that a phone case doesn&apos;t only need to
-              look good, but also last you for the years to come. We offer a
-              5-year print guarantee: If you case isn&apos;t of the highest quality,
-              we&apos;ll replace it for free.
-            </p>
-          </div>
-        </div>
-
         <div className='flex space-x-6 overflow-hidden mt-4 rounded-xl bg-gray-900/5 ring-1 ring-inset ring-gray-900/10 lg:rounded-2xl'>
           <PhonePreview
-            croppedImageUrl={configuration.croppedImageUrl!}
-            color={color!}
+            croppedImageUrl={croppedImageUrl}
+            color={color}
           />
         </div>
 
-        <div>
-          <div className='grid grid-cols-2 gap-x-6 py-10 text-sm'>
-            <div>
-              <p className='font-medium text-gray-900'>Shipping address</p>
-              <div className='mt-2 text-zinc-700'>
-                <address className='not-italic'>
-                  <span className='block'>{shippingAddress?.name}</span>
-                  <span className='block'>{shippingAddress?.street}</span>
-                  <span className='block'>
-                    {shippingAddress?.postalCode} {shippingAddress?.city}
-                  </span>
-                </address>
-              </div>
-            </div>
-            <div>
-              <p className='font-medium text-gray-900'>Billing address</p>
-              <div className='mt-2 text-zinc-700'>
-                <address className='not-italic'>
-                  <span className='block'>{billingAddress?.name}</span>
-                  <span className='block'>{billingAddress?.street}</span>
-                  <span className='block'>
-                    {billingAddress?.postalCode} {billingAddress?.city}
-                  </span>
-                </address>
-              </div>
-            </div>
+        <div className='grid grid-cols-2 gap-x-6 py-10 text-sm'>
+          <AddressSection address={shippingAddress} type="Shipping" />
+          <AddressSection address={billingAddress} type="Billing" />
+        </div>
+
+        <div className='grid grid-cols-2 gap-x-6 border-t border-zinc-200 py-10 text-sm'>
+          <div>
+            <p className='font-medium text-zinc-900'>Payment status</p>
+            <p className={`mt-2 font-medium ${
+              isPaid ? 'text-green-600' : 'text-yellow-600'
+            }`}>
+              {isPaid ? 'Paid' : 'Processing'}
+            </p>
           </div>
-
-          <div className='grid grid-cols-2 gap-x-6 border-t border-zinc-200 py-10 text-sm'>
-            <div>
-              <p className='font-medium text-zinc-900'>Payment status</p>
-              <p className='mt-2 text-zinc-700'>Paid</p>
-            </div>
-
-            <div>
-              <p className='font-medium text-zinc-900'>Shipping Method</p>
-              <p className='mt-2 text-zinc-700'>
-                DHL, takes up to 3 working days
-              </p>
-            </div>
+          <div>
+            <p className='font-medium text-zinc-900'>Shipping Method</p>
+            <p className='mt-2 text-zinc-700'>
+              DHL Express (3-5 working days)
+            </p>
           </div>
         </div>
 
@@ -140,7 +177,7 @@ const ThankYou = () => {
           </div>
           <div className='flex justify-between'>
             <p className='font-medium text-zinc-900'>Total</p>
-            <p className='text-zinc-700'>{formatPrice(amount)}</p>
+            <p className='text-zinc-900 font-medium'>{formatPrice(amount)}</p>
           </div>
         </div>
       </div>

@@ -8,9 +8,13 @@ export async function POST(req: Request) {
     try {
         const body = await req.text()
         const headersList = headers()
-        const signature = (await headersList).get('x-razorpay-signature')
+        const signature = headersList.get('x-razorpay-signature')
+        
+        console.log('Webhook received:', body.substring(0, 200))
+        console.log('Signature:', signature)
         
         if (!signature) {
+            console.error('Missing Razorpay Signature')
             return new Response('Missing Razorpay Signature', { status: 400 })
         }
 
@@ -20,33 +24,48 @@ export async function POST(req: Request) {
             .update(body)
             .digest('hex')
 
+        console.log('Expected signature:', expectedSignature)
+        
         if (signature !== expectedSignature) {
+            console.error('Invalid signature')
             return new Response('Invalid signature', { status: 400 })
         }
 
         const event = JSON.parse(body)
+        console.log('Event type:', event.event)
 
         // Handle payment success
-        if (event.event === 'payment.captured') {
-            const { order_id} = event.payload.payment.entity
+        if (event.event === 'payment.captured' || event.event === 'payment.authorized') {
+            // First, find the order from the notes
+            const paymentEntity = event.payload.payment.entity
+            const orderNotes = paymentEntity.notes || {}
+            const orderId = orderNotes.orderId || ''
+            
+            console.log('Order ID from notes:', orderId)
+            
+            if (!orderId) {
+                console.error('Order ID not found in payment notes')
+                return new Response('Order ID not found', { status: 400 })
+            }
 
             // Update order status in database
             await db.order.update({
                 where: {
-                    id: order_id
+                    id: orderId
                 },
                 data: {
                     isPaid: true,
-                    status: 'awaiting_shipment',
-                    
+                    // status: 'processing',
+                    // paymentId: paymentEntity.id
                 }
             })
 
+            console.log(`Order ${orderId} marked as paid`)
             return new Response('Webhook processed successfully', { status: 200 })
         }
 
         return new Response('Unhandled event type', { status: 200 })
-    } catch (error) { // Changed from err to error and using it in the response
+    } catch (error) {
         console.error('Webhook error:', error)
         return new Response(
             `Webhook error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
