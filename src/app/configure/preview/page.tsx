@@ -1,29 +1,37 @@
-import { db } from '@/db'
 import { notFound } from 'next/navigation'
+import { db } from '@/db'
 import DesignPreview from './DesignPreview'
 
 interface PageProps {
   searchParams: {
-    [key: string]: string | string[] | undefined
+    id?: string
   }
 }
 
 const Page = async ({ searchParams }: PageProps) => {
-  const { id } = searchParams
+  // Safely destructure id with default value
+  const { id = 'http://localhost:3000/configure/preview?id=your_configuration_id' } = searchParams
 
-  if (!id || typeof id !== 'string') {
+  if (!id) {
+    console.log('No ID provided in URL')
     return notFound()
   }
 
-  const configuration = await db.configuration.findUnique({
-    where: { id },
-  })
+  try {
+    const configuration = await db.configuration.findUnique({
+      where: { id }
+    })
 
-  if(!configuration) {
+    if (!configuration) {
+      console.log('Configuration not found for ID:', id)
+      return notFound()
+    }
+
+    return <DesignPreview configuration={configuration} />
+  } catch (error) {
+    console.error('Error fetching configuration:', error)
     return notFound()
   }
-
-  return <DesignPreview configuration={configuration} />
 }
 
 export default Page
