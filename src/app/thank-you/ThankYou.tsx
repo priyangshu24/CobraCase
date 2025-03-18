@@ -2,11 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { getPaymentStatus } from './action'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams} from 'next/navigation'
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import PhonePreview from '@/components/ui/PhonePreview'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+
 
 interface OrderData {
   isPaid: boolean
@@ -56,7 +57,7 @@ const AddressSection = ({
 
 const ThankYou = () => {
   const searchParams = useSearchParams()
-  const router = useRouter()
+  // const router = useRouter()
   const orderId = searchParams.get('orderId') || ''
 
   const { data, isLoading, error, refetch } = useQuery<OrderData | true>({

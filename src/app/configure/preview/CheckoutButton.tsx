@@ -6,17 +6,52 @@ import { createCheckoutSession } from './actions'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 
-// Define the shape of the Razorpay response
+// Define interfaces for type safety
 interface RazorpayResponse {
   razorpay_payment_id: string
   razorpay_order_id: string
   razorpay_signature: string
 }
 
-// Declare the global Razorpay type
+interface RazorpayError {
+  error: {
+    code: string
+    description: string
+    source: string
+    step: string
+    reason: string
+  }
+}
+
+interface RazorpayOptions {
+  key: string
+  amount: number
+  currency: string
+  name: string
+  description: string
+  order_id: string
+  notes: Record<string, string>
+  prefill: {
+    name?: string
+    email?: string
+    contact?: string
+  }
+  handler: (response: RazorpayResponse) => void
+  modal: {
+    ondismiss: () => void
+  }
+  theme: {
+    color: string
+  }
+}
+
+// Update Razorpay window type
 declare global {
   interface Window {
-    Razorpay: any
+    Razorpay: new (options: RazorpayOptions) => {
+      open: () => void
+      on: (event: string, handler: (response: RazorpayError) => void) => void
+    }
   }
 }
 
@@ -38,16 +73,18 @@ const CheckoutButton = ({
     try {
       setIsLoading(true)
 
-      // Create checkout session
       const checkoutData = await createCheckoutSession({ configId })
-      console.log('Checkout data:', checkoutData)
-
-      if (!checkoutData || !checkoutData.key) {
+      
+      if (!checkoutData?.key) {
         throw new Error('Failed to create checkout session')
       }
 
-      // Load the Razorpay script dynamically if not already loaded
-      if (typeof window !== 'undefined' && !window.Razorpay) {
+      if (typeof window === 'undefined') {
+        throw new Error('Window is not defined')
+      }
+
+      // Load Razorpay script if needed
+      if (!window.Razorpay) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement('script')
           script.src = 'https://checkout.razorpay.com/v1/checkout.js'
@@ -57,8 +94,7 @@ const CheckoutButton = ({
         })
       }
 
-      // Configure Razorpay
-      const options = {
+      const options: RazorpayOptions = {
         key: checkoutData.key,
         amount: checkoutData.amount,
         currency: checkoutData.currency,
@@ -66,20 +102,13 @@ const CheckoutButton = ({
         description: 'Custom Phone Case',
         order_id: checkoutData.id,
         notes: checkoutData.notes,
-        // Prefill customer information if available
-        prefill: {
-          // name: user.name,
-          // email: user.email,
-          // contact: user.phone
-        },
+        prefill: {},
         handler: function (response: RazorpayResponse) {
           console.log('Payment succeeded:', response)
-          // Redirect to success page
-          router.push(`/thank-you?orderId=${checkoutData.orderId}`)
+          router.push(`/thank-you?orderId=${checkoutData.orderId}&paymentId=${response.razorpay_payment_id}`)
         },
         modal: {
           ondismiss: function () {
-            console.log('Payment modal closed')
             setIsLoading(false)
           },
         },
@@ -88,18 +117,16 @@ const CheckoutButton = ({
         },
       }
 
-      // Initialize and open Razorpay
       const razorpay = new window.Razorpay(options)
-      razorpay.on('payment.failed', function (response: any) {
+      
+      razorpay.on('payment.failed', function (response: RazorpayError) {
         console.error('Payment failed:', response.error)
         setIsLoading(false)
-        alert('Payment failed. Please try again.')
       })
 
       razorpay.open()
     } catch (error) {
       console.error('Checkout error:', error)
-      alert('Failed to start checkout process. Please try again.')
       setIsLoading(false)
     }
   }

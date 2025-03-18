@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "type-check": "tsc --noEmit",
+    "lint": "next lint && npm run type-check"
   },
   "dependencies": {
     "11": "^0.0.1",
@@ -52,6 +53,8 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.3",
     "@types/stripe": "^8.0.416",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8.5.3",

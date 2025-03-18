@@ -4,7 +4,8 @@ import { BASE_PRICE, PRODUCT_PRICES } from '@/config/products'
 import { db } from '@/db'
 import { razorpay } from '@/lib/razorpay'
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server'
-import { Order } from '@prisma/client'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Order, User } from '@prisma/client'
 
 export const createCheckoutSession = async ({
   configId,
@@ -17,13 +18,15 @@ export const createCheckoutSession = async ({
       where: { id: configId },
     })
     
-    if (!configuration || !configuration.id) {
+    if (!configuration) {
       throw new Error('No such configuration found')
     }
     
     // Get user from session
     const { getUser } = getKindeServerSession()
     const user = await getUser()
+    
+    console.log('Retrieved user:', user)
     
     if (!user || !user.id || !user.email) {
       throw new Error('You need to be logged in')
@@ -41,6 +44,7 @@ export const createCheckoutSession = async ({
           email: user.email,
         },
       })
+      console.log('Created new user:', dbUser)
     }
     
     // Calculate price
@@ -49,25 +53,38 @@ export const createCheckoutSession = async ({
     if (finish === 'textured') price += PRODUCT_PRICES.finish.textured
     if (material === 'polycarbonate') price += PRODUCT_PRICES.material.polycarbonate
     
-    // Convert price to paise for Razorpay
+    // Ensure price is in paise/cents (Razorpay expects amount in smallest currency unit)
     const amountInPaise = Math.round(price)
     
-    // Create new order (don't reuse existing orders)
-    const order = await db.order.create({
-      data: {
-        amount: price,
+    // Find or create order
+    let order: Order | null = await db.order.findFirst({
+      where: {
         userId: dbUser.id,
         configurationId: configuration.id,
-        isPaid: false
-      }
+        isPaid: false,
+      },
     })
-
-    // Generate URLs with proper error handling
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
-    const successUrl = encodeURI(`${serverUrl}/thank-you?orderId=${order.id}`)
-    const cancelUrl = encodeURI(`${serverUrl}/configure/preview?id=${configuration.id}`)
     
-    // Create Razorpay order
+    if (!order) {
+      order = await db.order.create({
+        data: {
+          // Store amount in database as the actual amount (not in paise)
+          amount: price,
+          userId: dbUser.id,
+          configurationId: configuration.id,
+          status: 'awaiting_shipment',
+          isPaid: false,
+        },
+      })
+      console.log('Created new order:', order)
+    }
+    
+    // Generate URLs for success and failure
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+    const successUrl = `${serverUrl}/thank-you?orderId=${order.id}`
+    const cancelUrl = `${serverUrl}/configure/preview?id=${configuration.id}`
+    
+    // Create Razorpay order with additional parameters
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
@@ -77,19 +94,21 @@ export const createCheckoutSession = async ({
         userId: user.id,
         orderId: order.id,
         configurationId: configuration.id,
-        successUrl,
-        cancelUrl
+        successUrl: successUrl,
+        cancelUrl: cancelUrl
       }
     })
     
-    // Return order details
+    console.log('Created Razorpay order:', razorpayOrder.id)
+    
+    // Return order details 
     return {
       id: razorpayOrder.id,
       amount: amountInPaise,
       currency: 'INR',
       orderId: order.id,
       configId: configuration.id,
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+      key: process.env.RAZORPAY_KEY_ID!,
       notes: {
         userId: user.id,
         orderId: order.id,
