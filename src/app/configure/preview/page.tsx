@@ -3,14 +3,13 @@ import { db } from '@/db'
 import DesignPreview from './DesignPreview'
 
 interface PageProps {
-  searchParams: {
-    id?: string
-  }
+  params: { [key: string]: string | string[] }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 const Page = async ({ searchParams }: PageProps) => {
-  // Safely destructure id with default value
-  const { id = 'http://localhost:3000/configure/preview?id=your_configuration_id' } = searchParams
+  // Safely access id with default value
+  const id = searchParams.id as string || 'http://localhost:3000/configure/preview?id=your_configuration_id'
 
   if (!id) {
     console.log('No ID provided in URL')
