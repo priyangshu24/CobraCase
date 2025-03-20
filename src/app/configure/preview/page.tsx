@@ -2,27 +2,34 @@ import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import DesignPreview from './DesignPreview'
 
-interface PageProps {
-  params: { [key: string]: string | string[] }
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: { [key: string]: string }
   searchParams: { [key: string]: string | string[] | undefined }
-}
+}) {
+  // Get configuration ID from search params
+  const configId = searchParams.id
+  
+  // Add debug logging
+  console.log('Accessing preview with params:', {
+    configId,
+    fullUrl: `${process.env.NEXT_PUBLIC_SERVER_URL}/configure/preview?id=${configId}`
+  })
 
-const Page = async ({ searchParams }: PageProps) => {
-  // Safely access id with default value
-  const id = searchParams.id as string || 'http://localhost:3000/configure/preview?id=your_configuration_id'
-
-  if (!id) {
-    console.log('No ID provided in URL')
+  if (!configId || typeof configId !== 'string') {
+    console.log('Invalid or missing configuration ID')
     return notFound()
   }
 
   try {
     const configuration = await db.configuration.findUnique({
-      where: { id }
+      where: { id: configId }
     })
 
     if (!configuration) {
-      console.log('Configuration not found for ID:', id)
+      console.log('Configuration not found:', configId)
       return notFound()
     }
 
@@ -32,5 +39,3 @@ const Page = async ({ searchParams }: PageProps) => {
     return notFound()
   }
 }
-
-export default Page
